@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d "%~dp0Google-form-qr-generator"
+cd /d "%~dp0"
 
 if not exist "node_modules" (
   echo [setup] node_modules ‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñBnpm install ‚ğÀs‚µ‚Ü‚·...

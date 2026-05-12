@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d "%~dp0Google-form-qr-generator"
+cd /d "%~dp0"
 
 if not exist "node_modules" (
   echo [setup] node_modules が見つかりません。npm install を実行します...
@@ -21,5 +21,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo [build] 完了しました。出力先: Google-form-qr-generator\dist
+echo [build] 完了しました。出力先: dist
 pause

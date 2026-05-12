@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d "%~dp0Google-form-qr-generator"
+cd /d "%~dp0"
 
 echo [setup] Node / npm のバージョンを確認します...
 where node >nul 2>nul
