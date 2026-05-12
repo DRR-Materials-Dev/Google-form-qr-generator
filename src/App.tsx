@@ -161,7 +161,12 @@ export default function App() {
       <style>{printStyle}</style>
       <header className="no-print sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <h1 className="text-base font-bold sm:text-lg">Google Form QR 大量生成ツール</h1>
+          <h1 className="flex items-baseline gap-2 text-base font-bold sm:text-lg">
+            <span>Google Form QR 大量生成ツール</span>
+            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+              Ver {__APP_VERSION__}
+            </span>
+          </h1>
           <Button variant="ghost" onClick={toggleDark} aria-label="ダークモード切替">
             {isDark ? '☀ ライト' : '🌙 ダーク'}
           </Button>

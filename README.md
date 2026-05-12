@@ -1,8 +1,10 @@
 # Google Form QR 大量生成ツール
 
+現行バージョン: Ver 1.0.0 ([バージョン履歴](#バージョン履歴))
+
 Google フォームの事前入力URLに対して、コード（連番 または CSV）を差し込んだ大量のURL＋QRコードを一括生成するブラウザ完結のWebアプリです。
 
-**▶ 公開ページ (GitHub Pages): <https://drr-materials-dev.github.io/Google-form-qr-generator/>**
+公開ページ (GitHub Pages): <https://drr-materials-dev.github.io/Google-form-qr-generator/>
 
 ## 概要
 
@@ -53,6 +55,14 @@ Vite の `base` は `/Google-form-qr-generator/` に設定されています (`v
 - Tailwind CSS (ダークモード class 戦略)
 - [qrcode](https://github.com/soldair/node-qrcode) (QRコード生成)
 - [JSZip](https://github.com/Stuk/jszip) (ZIPアーカイブ生成)
+
+## バージョン履歴
+
+| バージョン | リリース日 | 主な変更 |
+| --- | --- | --- |
+| 1.0.0 | 2026-05-12 | 初版リリース。URLテンプレート / 連番・CSV生成 / ラベル焼き込みPNG / ZIP出力 / 印刷レイアウト (用紙サイズ・QR縮尺・QR間マージン・用紙余白・切り取り枠線) / ダークモード / GitHub Pages 自動デプロイ |
+
+UI に表示されるバージョンは `package.json` の `version` フィールドから Vite の `define` 経由で注入されます。リリース時は両方を更新してください。
 
 ## ライセンス
 
