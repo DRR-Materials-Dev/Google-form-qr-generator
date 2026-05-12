@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useDarkMode } from './hooks/useDarkMode'
 import { Alert, Button, Checkbox, Field, NumberInput, Section, Select, TextArea, TextInput } from './components/ui'
 import type { AppConfig, GeneratedItem } from './lib/types'
-import { MAX_COUNT, PLACEHOLDER } from './lib/types'
+import { MAX_COUNT, PLACEHOLDER, SINGLE_PRINT_COPIES_MAX } from './lib/types'
 import { PipelineError, prepareCodes, runPipeline } from './lib/pipeline'
 import { buildZip } from './lib/zipBuilder'
 import { sanitizeFileNameStem } from './lib/sanitize'
@@ -41,6 +41,7 @@ const DEFAULT_CONFIG: AppConfig = {
     showCodeText: true,
     showUrlText: false,
     showCutGuideBorder: true,
+    singlePrintCopies: 1,
   },
 }
 
@@ -158,6 +159,12 @@ export default function App() {
   }
 
   const printedQrWidth = Math.max(1, Math.round((cfg.qr.size * cfg.print.qrScale) / 100))
+
+  const displayItems = useMemo(() => {
+    if (cfg.useCode || items.length === 0) return items
+    const copies = clamp(cfg.print.singlePrintCopies, 1, SINGLE_PRINT_COPIES_MAX)
+    return Array.from({ length: copies }, () => items[0])
+  }, [items, cfg.useCode, cfg.print.singlePrintCopies])
 
   const printStyle = `
 @page {
@@ -501,6 +508,23 @@ export default function App() {
               </Field>
             </div>
 
+            {!cfg.useCode && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Field label="印刷枚数" hint={`同じQRを並べる枚数 (1〜${SINGLE_PRINT_COPIES_MAX})`}>
+                  <NumberInput
+                    value={cfg.print.singlePrintCopies}
+                    min={1}
+                    max={SINGLE_PRINT_COPIES_MAX}
+                    onChange={(e) =>
+                      updatePrint({
+                        singlePrintCopies: clamp(Number(e.target.value), 1, SINGLE_PRINT_COPIES_MAX),
+                      })
+                    }
+                  />
+                </Field>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-4">
               <Checkbox
                 checked={cfg.print.showCutGuideBorder}
@@ -531,8 +555,9 @@ export default function App() {
           <Button variant="secondary" onClick={handleDownloadZip} disabled={running || items.length === 0}>
             ZIPダウンロード ({items.length}件)
           </Button>
-          <Button variant="secondary" onClick={() => window.print()} disabled={items.length === 0}>
+          <Button variant="secondary" onClick={() => window.print()} disabled={displayItems.length === 0}>
             印刷
+            {!cfg.useCode && displayItems.length > 1 ? ` (${displayItems.length}枚)` : ''}
           </Button>
           <span className="text-xs text-slate-500 dark:text-slate-400">
             {cfg.useCode ? `上限: ${MAX_COUNT}件` : '単一QR生成モード'}
@@ -555,12 +580,12 @@ export default function App() {
           )}
         </div>
 
-        {items.length > 0 && (
+        {displayItems.length > 0 && (
           <div className="mt-6">
             <ul className="print-grid grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {items.map((item) => (
+              {displayItems.map((item, idx) => (
                 <li
-                  key={item.fileName}
+                  key={`${item.fileName}-${idx}`}
                   className="rounded border border-slate-200 bg-white p-2 text-center dark:border-slate-700 dark:bg-slate-800"
                 >
                   <img

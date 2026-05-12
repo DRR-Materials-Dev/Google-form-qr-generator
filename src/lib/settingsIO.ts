@@ -110,6 +110,7 @@ function mergeConfig(raw: Record<string, unknown>, d: AppConfig): AppConfig {
       showCodeText: pickBoolean(print?.showCodeText, d.print.showCodeText),
       showUrlText: pickBoolean(print?.showUrlText, d.print.showUrlText),
       showCutGuideBorder: pickBoolean(print?.showCutGuideBorder, d.print.showCutGuideBorder),
+      singlePrintCopies: pickNumber(print?.singlePrintCopies, d.print.singlePrintCopies),
     },
   }
 }

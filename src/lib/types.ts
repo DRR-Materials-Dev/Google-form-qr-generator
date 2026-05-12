@@ -44,7 +44,10 @@ export interface PrintConfig {
   showCodeText: boolean
   showUrlText: boolean
   showCutGuideBorder: boolean
+  singlePrintCopies: number
 }
+
+export const SINGLE_PRINT_COPIES_MAX = 100
 
 export interface AppConfig {
   urlTemplate: string
