@@ -62,6 +62,7 @@ function mergeConfig(raw: Record<string, unknown>, d: AppConfig): AppConfig {
 
   return {
     urlTemplate: pickString(raw.urlTemplate, d.urlTemplate),
+    useCode: pickBoolean(raw.useCode, d.useCode),
     mode: pickEnum(raw.mode, ['sequence', 'csv'] as const, d.mode) as GenerationMode,
     sequence: {
       prefix: pickString(seq?.prefix, d.sequence.prefix),

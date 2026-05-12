@@ -48,6 +48,7 @@ export interface PrintConfig {
 
 export interface AppConfig {
   urlTemplate: string
+  useCode: boolean
   mode: GenerationMode
   sequence: SequenceConfig
   csv: CsvConfig
@@ -55,6 +56,8 @@ export interface AppConfig {
   label: LabelConfig
   print: PrintConfig
 }
+
+export const SINGLE_QR_FILENAME = 'qr.png'
 
 export interface GeneratedItem {
   code: string

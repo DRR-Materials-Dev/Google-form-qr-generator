@@ -3,7 +3,7 @@ import { buildLabelText, buildUrl } from './labelText'
 import { renderQrWithLabel } from './qrRenderer'
 import { uniquifyFileNames } from './sanitize'
 import type { AppConfig, GeneratedItem } from './types'
-import { PLACEHOLDER } from './types'
+import { PLACEHOLDER, SINGLE_QR_FILENAME } from './types'
 
 export interface PrepareResult {
   codes: string[]
@@ -13,22 +13,26 @@ export interface PrepareResult {
 
 export class PipelineError extends Error {}
 
-export function validateUrlTemplate(template: string): void {
+export function validateUrlTemplate(template: string, useCode: boolean): void {
   if (template.trim().length === 0) {
-    throw new PipelineError('URLテンプレートを入力してください。')
+    throw new PipelineError('URLを入力してください。')
   }
-  if (!template.includes(PLACEHOLDER)) {
-    throw new PipelineError(`URLテンプレートに ${PLACEHOLDER} が含まれていません。`)
+  if (useCode && !template.includes(PLACEHOLDER)) {
+    throw new PipelineError(`URLに ${PLACEHOLDER} が含まれていません。`)
   }
+  const sampleUrl = useCode ? buildUrl(template, 'SAMPLE') : template
   try {
-    new URL(buildUrl(template, 'SAMPLE'))
+    new URL(sampleUrl)
   } catch {
-    throw new PipelineError('URLテンプレートが有効なURLになっていません。')
+    throw new PipelineError('URLが有効な形式ではありません。')
   }
 }
 
 export function prepareCodes(cfg: AppConfig): PrepareResult {
-  validateUrlTemplate(cfg.urlTemplate)
+  validateUrlTemplate(cfg.urlTemplate, cfg.useCode)
+  if (!cfg.useCode) {
+    return { codes: [''], duplicatesRemoved: 0, duplicates: [] }
+  }
   try {
     if (cfg.mode === 'sequence') {
       const r = generateFromSequence(cfg.sequence)
@@ -53,13 +57,15 @@ export async function runPipeline(
   callbacks: RunCallbacks = {},
 ): Promise<GeneratedItem[]> {
   const { onProgress, signal } = callbacks
-  const fileNames = uniquifyFileNames(codes, 'png')
+  const fileNames = cfg.useCode
+    ? uniquifyFileNames(codes, 'png')
+    : [SINGLE_QR_FILENAME]
 
   const items: GeneratedItem[] = []
   for (let i = 0; i < codes.length; i++) {
     if (signal?.aborted) throw new PipelineError('生成がキャンセルされました。')
     const code = codes[i]
-    const url = buildUrl(cfg.urlTemplate, code)
+    const url = cfg.useCode ? buildUrl(cfg.urlTemplate, code) : cfg.urlTemplate
     const labelText = buildLabelText(cfg.label, code, url)
     const rendered = await renderQrWithLabel(url, labelText, cfg.qr, cfg.label)
     items.push({

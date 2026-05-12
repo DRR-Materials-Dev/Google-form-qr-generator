@@ -15,6 +15,7 @@ import {
 
 const DEFAULT_CONFIG: AppConfig = {
   urlTemplate: `https://docs.google.com/forms/d/XXXXX/viewform?entry.2096451574=${PLACEHOLDER}`,
+  useCode: true,
   mode: 'sequence',
   sequence: { prefix: 'GAME', start: 1, end: 10, digits: 2 },
   csv: { text: 'ALPHA\nBETA\nOMEGA' },
@@ -57,6 +58,7 @@ export default function App() {
   const settingsInputRef = useRef<HTMLInputElement>(null)
 
   const previewUrl = useMemo(() => {
+    if (!cfg.useCode) return cfg.urlTemplate
     const sample =
       cfg.mode === 'sequence'
         ? `${cfg.sequence.prefix}${String(cfg.sequence.start).padStart(cfg.sequence.digits, '0')}`
@@ -263,21 +265,33 @@ export default function App() {
 
         <div className="no-print grid gap-4 lg:grid-cols-2">
           <Section title="1. URLテンプレート">
-            <Field label="URLテンプレート" hint={`${PLACEHOLDER} の部分が各コードで置換されます。`}>
+            <Field
+              label={cfg.useCode ? 'URLテンプレート' : 'URL'}
+              hint={cfg.useCode ? `${PLACEHOLDER} の部分が各コードで置換されます。` : 'このURLでQRコードを1枚だけ生成します。'}
+            >
               <TextInput
                 value={cfg.urlTemplate}
                 onChange={(e) => update('urlTemplate', e.target.value)}
-                placeholder="https://docs.google.com/forms/d/XXXXX/viewform?entry.0000000000={CODE}"
+                placeholder={cfg.useCode
+                  ? 'https://docs.google.com/forms/d/XXXXX/viewform?entry.0000000000={CODE}'
+                  : 'https://example.com/'}
               />
             </Field>
+            <Checkbox
+              checked={cfg.useCode}
+              onChange={(v) => update('useCode', v)}
+            >
+              URLに {PLACEHOLDER} プレースホルダを使い、コードごとに置換する (OFFで単一QR生成)
+            </Checkbox>
             <div className="text-xs text-slate-600 dark:text-slate-300">
-              <div>プレビュー (先頭コード):</div>
+              <div>プレビュー{cfg.useCode ? ' (先頭コード)' : ''}:</div>
               <div className="mt-1 break-all rounded bg-slate-100 px-2 py-1 font-mono text-[11px] dark:bg-slate-700">
                 {previewUrl}
               </div>
             </div>
           </Section>
 
+          {cfg.useCode && (
           <Section title="2. コード生成">
             <div className="flex gap-4">
               <label className="inline-flex items-center gap-2 text-sm">
@@ -343,6 +357,7 @@ export default function App() {
               </>
             )}
           </Section>
+          )}
 
           <Section title="3. QR設定">
             <div className="grid grid-cols-2 gap-3">
@@ -519,7 +534,9 @@ export default function App() {
           <Button variant="secondary" onClick={() => window.print()} disabled={items.length === 0}>
             印刷
           </Button>
-          <span className="text-xs text-slate-500 dark:text-slate-400">上限: {MAX_COUNT}件</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {cfg.useCode ? `上限: ${MAX_COUNT}件` : '単一QR生成モード'}
+          </span>
         </div>
 
         <div className="no-print mt-4 space-y-2">
