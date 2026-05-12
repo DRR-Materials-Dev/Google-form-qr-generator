@@ -5,6 +5,13 @@ import type { AppConfig, GeneratedItem } from './lib/types'
 import { MAX_COUNT, PLACEHOLDER } from './lib/types'
 import { PipelineError, prepareCodes, runPipeline } from './lib/pipeline'
 import { buildZip } from './lib/zipBuilder'
+import { sanitizeFileNameStem } from './lib/sanitize'
+import {
+  SETTINGS_EXTENSION,
+  SettingsParseError,
+  parseConfig,
+  serializeConfig,
+} from './lib/settingsIO'
 
 const DEFAULT_CONFIG: AppConfig = {
   urlTemplate: `https://docs.google.com/forms/d/XXXXX/viewform?entry.2096451574=${PLACEHOLDER}`,
@@ -44,7 +51,10 @@ export default function App() {
   const [warning, setWarning] = useState<string | null>(null)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [running, setRunning] = useState(false)
+  const [settingsFileName, setSettingsFileName] = useState('qr-settings')
+  const [settingsMessage, setSettingsMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const settingsInputRef = useRef<HTMLInputElement>(null)
 
   const previewUrl = useMemo(() => {
     const sample =
@@ -114,6 +124,37 @@ export default function App() {
     triggerDownload(item.pngBlob, item.fileName)
   }
 
+  const handleSaveSettings = () => {
+    setSettingsMessage(null)
+    const stem = sanitizeFileNameStem(settingsFileName.trim() || 'qr-settings')
+    const json = serializeConfig(cfg, __APP_VERSION__)
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+    triggerDownload(blob, `${stem}.${SETTINGS_EXTENSION}`)
+    setSettingsMessage({ kind: 'info', text: `設定を ${stem}.${SETTINGS_EXTENSION} として保存しました。` })
+  }
+
+  const handleLoadSettings = async (file: File) => {
+    setSettingsMessage(null)
+    try {
+      const text = await file.text()
+      const cleaned = text.replace(/^﻿/, '')
+      const loaded = parseConfig(cleaned, DEFAULT_CONFIG)
+      setCfg(loaded)
+      const stem = file.name.replace(/\.qrsettings\.json$/i, '').replace(/\.json$/i, '')
+      if (stem.length > 0) setSettingsFileName(stem)
+      setSettingsMessage({ kind: 'info', text: `${file.name} から設定を読み込みました。` })
+    } catch (e) {
+      if (e instanceof SettingsParseError) setSettingsMessage({ kind: 'error', text: e.message })
+      else if (e instanceof Error) setSettingsMessage({ kind: 'error', text: e.message })
+      else setSettingsMessage({ kind: 'error', text: '設定の読込に失敗しました。' })
+    }
+  }
+
+  const handleResetSettings = () => {
+    setCfg(DEFAULT_CONFIG)
+    setSettingsMessage({ kind: 'info', text: '設定を初期値に戻しました。' })
+  }
+
   const printedQrWidth = Math.max(1, Math.round((cfg.qr.size * cfg.print.qrScale) / 100))
 
   const printStyle = `
@@ -174,6 +215,52 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
+        <section className="no-print mb-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">設定の保存 / 読込</h2>
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label="ファイル名">
+              <div className="flex items-stretch">
+                <TextInput
+                  value={settingsFileName}
+                  onChange={(e) => setSettingsFileName(e.target.value)}
+                  placeholder="qr-settings"
+                  className="rounded-r-none"
+                />
+                <span className="inline-flex items-center rounded-r-md border border-l-0 border-slate-300 bg-slate-100 px-2 text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  .{SETTINGS_EXTENSION}
+                </span>
+              </div>
+            </Field>
+            <Button variant="secondary" onClick={handleSaveSettings}>
+              設定を保存
+            </Button>
+            <input
+              ref={settingsInputRef}
+              type="file"
+              accept=".qrsettings.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) handleLoadSettings(f)
+                e.target.value = ''
+              }}
+            />
+            <Button variant="secondary" onClick={() => settingsInputRef.current?.click()}>
+              設定を読込
+            </Button>
+            <Button variant="ghost" onClick={handleResetSettings}>
+              初期値に戻す
+            </Button>
+          </div>
+          {settingsMessage && (
+            <div className="mt-3">
+              <Alert kind={settingsMessage.kind === 'error' ? 'error' : 'info'}>
+                {settingsMessage.text}
+              </Alert>
+            </div>
+          )}
+        </section>
+
         <div className="no-print grid gap-4 lg:grid-cols-2">
           <Section title="1. URLテンプレート">
             <Field label="URLテンプレート" hint={`${PLACEHOLDER} の部分が各コードで置換されます。`}>
